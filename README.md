@@ -49,3 +49,10 @@ npm run build:installer
 ## 下载说明
 建议将安装包发布到 Releases（不是 Packages）：
 https://github.com/linyushuo0818/QuickDrop/releases/latest
+
+发布方式（自动）
+打 tag 即可触发 GitHub Actions 生成安装包并上传到 Releases：
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
