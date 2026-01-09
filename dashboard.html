@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniDrop Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --accent-color: #1a73e8;
+            --border-color: #dadce0;
+            --success-color: #1e8e3e;
+        }
+
+        body {
+            font-family: 'Google Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto 30px auto;
+            padding: 0 10px;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            font-size: 14px;
+            background: #e6f4ea;
+            color: var(--success-color);
+            padding: 10px 18px;
+            border-radius: 24px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+        }
+
+        .wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero-section {
+            background: var(--card-bg);
+            border-radius: 32px;
+            padding: 24px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: stretch;
+            justify-content: space-between;
+        }
+
+        .ip-display {
+            flex: 1;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+        }
+
+        .ip-box {
+            font-family: 'SF Mono', 'Segoe UI Mono', 'Roboto Mono', Menlo, Courier, monospace;
+            font-size: 24px;
+            font-weight: 800;
+            color: #1a1a1a;
+            background: #f3f4f6;
+            padding: 10px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: block;
+            text-align: left;
+            transition: 0.2s;
+            border: 1px solid #e5e7eb;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+            width: 100%;
+            max-width: 620px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ip-box:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+        }
+
+        .hero-hint {
+            margin-top: 0;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .settings-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            background: white;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0 20px;
+            height: 40px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            line-height: 1;
+        }
+
+        .btn:hover {
+            background: #f1f3f4;
+            border-color: #bdc1c6;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #1557b0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .action-btn {
+            width: 180px;
+            height: 52px;
+            justify-content: flex-start;
+            padding: 0 24px;
+            border-radius: 12px;
+            font-size: 15px;
+            background: #e9ecef;
+            border-color: transparent;
+            font-weight: 600;
+        }
+
+        .action-btn:hover {
+            background: #dee2e6;
+        }
+
+        .btn-on {
+            background: var(--success-color);
+            color: white;
+            border: 1px solid transparent;
+        }
+
+        .btn-on:hover {
+            background: #137333;
+        }
+
+        .btn-off {
+            background: white;
+            color: #d93025;
+            border: 1px solid #d93025;
+        }
+
+        .btn-off:hover {
+            background: #fce8e6;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-color: #cce0ff;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .card-body {
+            flex: 1;
+            margin: 15px 0;
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            line-clamp: 4;
+            -webkit-box-orient: vertical;
+            word-break: break-all;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .copy-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .copy-btn:hover {
+            background: #e8f0fe;
+            color: var(--accent-color);
+        }
+
+        .bg-red {
+            background: #fce8e6;
+            color: #c5221f;
+        }
+
+        .bg-blue {
+            background: #e8f0fe;
+            color: #1967d2;
+        }
+
+        .bg-green {
+            background: #e6f4ea;
+            color: #137333;
+        }
+
+        .bg-yellow {
+            background: #fef7e0;
+            color: #ea8600;
+        }
+
+        .bg-purple {
+            background: #f3e8fd;
+            color: #8430ce;
+        }
+
+
+
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+
+            .hero-section {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+
+            .ip-box {
+                font-size: 20px;
+                display: block;
+            }
+
+            .settings-row {
+                justify-content: center;
+            }
+
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Immersive Image Card Styles */
+        .card.is-image {
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .card-bg-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+            z-index: 0;
+        }
+
+        .card.is-image::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.6) 100%);
+            z-index: 1;
+            pointer-events: none;
+            border-radius: 16px;
+        }
+
+        .card.is-image .card-header,
+        .card.is-image .card-footer {
+            position: relative;
+            z-index: 2;
+        }
+
+        .card.is-image .card-body {
+            display: none;
+        }
+
+        .card.is-image .card-footer {
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: auto;
+        }
+
+        .card.is-image .card-icon {
+            background: rgba(255, 255, 255, 0.2) !important;
+            backdrop-filter: blur(4px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card.is-image .copy-btn {
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card.is-image .copy-btn:hover {
+            background: white;
+            color: var(--accent-color);
+        }
+    </style>
+    <style>
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .qr-placeholder {
+            width: 200px;
+            height: 200px;
+            background: #f0f0f0;
+            margin: 20px auto;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn {
+            margin-top: 20px;
+            padding: 8px 24px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="brand">📦 OmniDrop</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button id="btnAutoStart" class="btn" onclick="toggleAutostart()">🚀 开机自启</button>
+            <button class="btn" onclick="showQRCode()">📱 扫码连接</button>
+            <button class="btn" onclick="loadHistory()">🔄 刷新</button>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal-overlay" id="qrModal" onclick="if(event.target===this)this.style.display='none'">
+        <div class="modal">
+            <h3 style="margin:0 0 10px 0;">iPad 扫码配置</h3>
+            <p style="color:#666; font-size:13px; margin:0;">运行 "OmniDrop 配置" 快捷指令扫描此码</p>
+            <div id="qrContent" class="qr-placeholder">加载中...</div>
+            <div style="font-family:monospace; background:#f5f5f5; padding:8px; border-radius:6px; font-size:12px; word-break:break-all;"
+                id="qrUrl"></div>
+            <button class="close-btn" onclick="document.getElementById('qrModal').style.display='none'">关闭</button>
+        </div>
+    </div>
+
+    <div class="wrapper">
+        <div class="hero-section">
+            <div class="ip-display">
+                <div class="ip-box" onclick="copyIP()" id="ipArea">{{SERVER_ADDRESS}}</div>
+                <div class="hero-hint" id="copyHint">点击复制 -> 粘贴到 iPad 快捷指令</div>
+            </div>
+            <div class="settings-row" style="flex-direction:column; gap:12px; align-items:flex-end;">
+                <button class="btn action-btn" onclick="openDir()">
+                    <span style="font-size:18px;">📂</span> <span style="flex:1;">打开文件夹</span>
+                </button>
+                <button class="btn action-btn" onclick="selectFolder()">
+                    <span style="font-size:18px;">⚙️</span> <span style="flex:1;">更改路径</span>
+                </button>
+            </div>
+        </div>
+
+
+
+        <div class="section-title">🕒 最近传输 (History)</div>
+        <div id="gridContainer" class="grid-container">
+            <div style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">加载中...</div>
+        </div>
+    </div>
+
+    <script>
+        const colors = ['bg-red', 'bg-blue', 'bg-green', 'bg-yellow', 'bg-purple'];
+
+
+
+        function copyIP() {
+            const text = document.getElementById('ipArea').innerText;
+            copyToClipboard(text, () => {
+                const hint = document.getElementById('copyHint');
+                hint.innerText = "✅ 已复制到剪贴板";
+                hint.style.color = "var(--success-color)";
+                setTimeout(() => {
+                    hint.innerText = "点击复制 -> 粘贴到 iPad 快捷指令";
+                    hint.style.color = "var(--text-secondary)";
+                }, 2000);
+            });
+        }
+
+        async function copyToClipboard(text, onSuccess, type = 'text') {
+            try {
+                if (type === 'image' && navigator.clipboard && navigator.clipboard.write) {
+                    try {
+                        const response = await fetch(text);
+                        const blob = await response.blob();
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ [blob.type]: blob })
+                        ]);
+                        onSuccess();
+                        return;
+                    } catch (err) {
+                        console.warn('Image copy failed, falling back to text', err);
+                    }
+                }
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text).then(onSuccess, () => fallbackCopy(text, onSuccess));
+                } else {
+                    fallbackCopy(text, onSuccess);
+                }
+            } catch (e) {
+                console.error('Copy failed', e);
+                alert('复制失败');
+            }
+        }
+
+        function fallbackCopy(text, onSuccess) {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.top = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                if (document.execCommand('copy')) onSuccess();
+                else alert('复制失败，请手动复制');
+            } catch (e) { alert('复制失败'); }
+            document.body.removeChild(ta);
+        }
+
+        function loadHistory() {
+            const container = document.getElementById('gridContainer');
+            fetch('/history').then(r => r.json()).then(data => {
+                container.innerHTML = '';
+                if (!data.records || data.records.length === 0) {
+                    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">暂无记录</div>';
+                    return;
+                }
+
+                data.records.slice(0, 20).forEach((item, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.setAttribute('data-type', item.type);
+
+                    const colorClass = colors[index % colors.length];
+                    let icon = '📄';
+                    let typeName = 'TEXT';
+                    let contentHtml = `<div class="card-text">${escapeHtml(item.preview)}</div>`;
+                    let bgImgTag = '';
+
+                    if (item.type === 'image') {
+                        icon = '🖼️';
+                        typeName = 'IMAGE';
+
+                        let imgSrc = item.content;
+                        // Strict Base64 cleanup
+                        if (typeof imgSrc === 'string') {
+                            imgSrc = imgSrc.replace(/[\r\n\s]+/g, '');
+                        }
+
+                        if (!imgSrc.startsWith('data:image')) {
+                            if (imgSrc.startsWith('/9j/')) imgSrc = `data:image/jpeg;base64,${imgSrc}`;
+                            else if (imgSrc.startsWith('iVBORw')) imgSrc = `data:image/png;base64,${imgSrc}`;
+                            else if (imgSrc.startsWith('R0lGOD')) imgSrc = `data:image/gif;base64,${imgSrc}`;
+                            else if (imgSrc.startsWith('UklGR')) imgSrc = `data:image/webp;base64,${imgSrc}`;
+                            else imgSrc = `data:image/png;base64,${imgSrc}`;
+                        }
+
+                        // Immersive Mode
+                        card.classList.add('is-image');
+                        bgImgTag = `<img src="${imgSrc}" class="card-bg-img" alt="Background" onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#eee';">`;
+                        contentHtml = '';
+                    }
+                    if (item.type === 'url') { icon = '🔗'; typeName = 'LINK'; }
+                    if (item.type === 'file') { icon = '📁'; typeName = 'FILE'; }
+
+                    const timeStr = new Date(item.timestamp).toLocaleTimeString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                    card.innerHTML = `
+                        ${bgImgTag}
+                        <div class="card-header">
+                            <div class="card-icon ${colorClass}">${icon}</div>
+                            <div class="action-row" style="display:flex; gap:5px;">
+                                <div class="copy-btn copy-clip-btn" title="复制到电脑">📋</div>
+                            </div>
+                        </div>
+                        <div class="card-body" style="overflow:hidden;">${contentHtml}</div>
+                        <div class="card-footer">
+                            <span>${typeName}</span>
+                            <span>${timeStr}</span>
+                        </div>
+                    `;
+
+                    // Events
+                    const copyBtn = card.querySelector('.copy-clip-btn');
+                    if (copyBtn) copyBtn.onclick = (e) => { e.stopPropagation(); copyToClipboard(item.content, () => alert('✅ 已复制'), item.type); };
+
+                    const pushBtn = card.querySelector('.push-btn');
+                    if (pushBtn) pushBtn.onclick = (e) => { e.stopPropagation(); pushToiPad(item); };
+
+                    card.onclick = () => copyToClipboard(item.content, () => alert('✅ 内容已复制'), item.type);
+                    container.appendChild(card);
+                });
+            }).catch(e => {
+                console.error(e);
+                container.innerHTML = '<div style="text-align:center; padding:20px;">加载失败</div>';
+            });
+        }
+
+
+
+        function toggleAutostart() {
+            const btn = document.getElementById('btnAutoStart');
+            const isEnabled = btn.classList.contains('btn-on');
+            const newState = !isEnabled;
+
+            fetch('/autostart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: newState })
+            }).then(r => r.json()).then(data => {
+                if (data.status === 'success') {
+                    updateAutoStartBtn(newState);
+                } else alert('设置失败');
+            });
+        }
+
+        function updateAutoStartBtn(enabled) {
+            const btn = document.getElementById('btnAutoStart');
+            if (enabled) {
+                btn.classList.add('btn-on');
+                btn.classList.remove('btn-off');
+                btn.innerHTML = '🚀 开机自启: ON';
+            } else {
+                btn.classList.add('btn-off');
+                btn.classList.remove('btn-on');
+                btn.innerHTML = '🚀 开机自启: OFF';
+            }
+        }
+
+        function openDir() { fetch('/open-dir', { method: 'POST' }); }
+
+        
+        function selectFolder() {
+            fetch('/select-folder', { method: 'POST' })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.status !== 'success') return;
+                    fetch('/config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ dataDir: d.path })
+                    }).then(r => r.json()).then(cfg => {
+                        if (cfg.status === 'success') alert('??????????????? ' + d.path);
+                        else alert('????????????: ' + (cfg.message || ''));
+                    });
+                });
+        }
+
+function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function showQRCode() {
+            const modal = document.getElementById('qrModal');
+            const content = document.getElementById('qrContent');
+            const urlText = document.getElementById('qrUrl');
+
+            modal.style.display = 'flex';
+            content.innerHTML = '加载中...';
+            urlText.innerText = '';
+
+            fetch('/qrcode')
+                .then(r => r.json())
+                .then(d => {
+                    if (d.status === 'success') {
+                        content.innerHTML = `<img src="${d.qrData}" style="width:100%;height:100%;">`;
+                        urlText.innerText = d.url;
+                    } else {
+                        content.innerHTML = '加载失败: ' + d.message;
+                    }
+                })
+                .catch(e => {
+                    content.innerHTML = '网络错误';
+                });
+        }
+
+        // Init
+        fetch('/autostart').then(r => r.json()).then(d => {
+            updateAutoStartBtn(d.enabled);
+        });
+        loadHistory();
+    </script>
+</body>
+
+</html>

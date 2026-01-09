@@ -1,0 +1,62 @@
+{
+    "name": "lan-clipboard",
+    "version": "1.0.0",
+    "description": "局域网图片传输到剪贴板工具",
+    "main": "server.js",
+    "bin": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "start:panel": "electron panel/main.js",
+        "build:server": "pkg . -t node18-win-x64 --out-path dist && node panel/build-server.js",
+        "build:icon": "node panel/build-icon.js",
+        "build:panel": "node panel/build-icon.js && electron-builder --win --x64 --dir --config.directories.output=dist/app && node panel/build-panel.js",
+        "build:installer": "node panel/build-icon.js && electron-builder --win --x64 --config.directories.output=dist/installer",
+        "build:panel:dir": "electron-builder --win --x64 --dir --config.directories.output=dist/app"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "multer": "^2.0.2",
+        "node-notifier": "^10.0.1",
+        "qrcode": "^1.5.4"
+    },
+    "devDependencies": {
+        "electron": "^28.2.3",
+        "electron-builder": "^24.13.3",
+        "pkg": "^5.8.1",
+        "png-to-ico": "^2.1.0"
+    },
+    "pkg": {
+        "assets": "dashboard.html"
+    },
+    "build": {
+        "appId": "com.omnidrop.panel",
+        "productName": "OmniDrop",
+        "directories": {
+            "output": "dist/installer"
+        },
+        "extraMetadata": {
+            "main": "panel/main.js"
+        },
+        "files": [
+            "panel/**/*",
+            "package.json"
+        ],
+        "extraResources": [
+            {
+                "from": "dist/server/OmniDropServer.exe",
+                "to": "server/OmniDropServer.exe"
+            }
+        ],
+        "win": {
+            "target": "nsis",
+            "signAndEditExecutable": false,
+            "artifactName": "OmniDropSetup.exe",
+            "icon": "panel/assets/icon.ico"
+        },
+        "nsis": {
+            "oneClick": true,
+            "perMachine": false,
+            "allowToChangeInstallationDirectory": false
+        }
+    }
+}
