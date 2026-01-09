@@ -1,4 +1,4 @@
-# QuackDrop（项目名）
+# QuackDrop
 
 这是一个局域网投递工具（应用内仍显示 OmniDrop），用于在 iPad 与 Windows 之间传输文本、图片、文件，并在桌面提供独立面板与托盘常驻能力。
 
@@ -31,7 +31,6 @@ npm run build:installer
 当前版本默认无鉴权，建议在可信局域网内使用。
 
 ## 代码来源说明
-本项目代码由 Gemini、Claude、GPT 共同生成，出现屎山代码属于正常现象。
+代码由 Gemini、Claude、GPT 生成，出现屎山代码属于正常现象。
 
-## GitHub 提交建议
-不建议提交 `dist/` 和 `node_modules/`。可通过 GitHub Releases 分发安装包。
+
