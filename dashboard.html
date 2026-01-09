@@ -477,6 +477,7 @@
         <div style="display:flex; gap:10px; align-items:center;">
             <button id="btnAutoStart" class="btn" onclick="toggleAutostart()">🚀 开机自启</button>
             <button class="btn" onclick="showQRCode()">📱 扫码连接</button>
+            <button class="btn btn-primary" onclick="showCanvas()">✍️ 手写板</button>
             <button class="btn" onclick="loadHistory()">🔄 刷新</button>
         </div>
     </div>
@@ -490,6 +491,25 @@
             <div style="font-family:monospace; background:#f5f5f5; padding:8px; border-radius:6px; font-size:12px; word-break:break-all;"
                 id="qrUrl"></div>
             <button class="close-btn" onclick="document.getElementById('qrModal').style.display='none'">关闭</button>
+        </div>
+    </div>
+
+    <!-- Canvas Modal -->
+    <div class="modal-overlay" id="canvasModal" style="z-index: 2000;">
+        <div class="modal" style="width: 95%; max-width: 800px; height: 80vh; max-height: 800px; display: flex; flex-direction: column; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin:0;">✍️ 实时手写板</h3>
+                <button class="close-btn" style="margin:0; padding: 5px 15px;" onclick="closeCanvas()">❌</button>
+            </div>
+            
+            <div style="flex: 1; border: 2px dashed #ccc; border-radius: 12px; position: relative; overflow: hidden; background: #fff; cursor: crosshair;" id="canvasContainer">
+                <canvas id="drawingCanvas" style="display: block; width: 100%; height: 100%; touch-action: none;"></canvas>
+            </div>
+
+            <div style="margin-top: 15px; display: flex; gap: 15px; justify-content: center;">
+                <button class="btn" onclick="clearCanvas()">🗑️ 清空</button>
+                <button class="btn btn-primary" onclick="sendCanvas()" id="btnSendCanvas">📤 发送到电脑</button>
+            </div>
         </div>
     </div>
 
@@ -597,27 +617,19 @@
                     let bgImgTag = '';
 
                     if (item.type === 'image') {
-                        icon = '🖼️';
+                        icon = '???';
                         typeName = 'IMAGE';
 
-                        let imgSrc = item.content;
-                        // Strict Base64 cleanup
-                        if (typeof imgSrc === 'string') {
-                            imgSrc = imgSrc.replace(/[\r\n\s]+/g, '');
+                        const imgSrc = safeImageSrc(item.content);
+    
+                        if (imgSrc) {
+                            // Immersive Mode
+                            card.classList.add('is-image');
+                            bgImgTag = `<img src="${imgSrc}" class="card-bg-img" alt="Background" onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#eee';">`;
+                            contentHtml = '';
+                        } else {
+                            contentHtml = '<div class="card-text">?????????</div>';
                         }
-
-                        if (!imgSrc.startsWith('data:image')) {
-                            if (imgSrc.startsWith('/9j/')) imgSrc = `data:image/jpeg;base64,${imgSrc}`;
-                            else if (imgSrc.startsWith('iVBORw')) imgSrc = `data:image/png;base64,${imgSrc}`;
-                            else if (imgSrc.startsWith('R0lGOD')) imgSrc = `data:image/gif;base64,${imgSrc}`;
-                            else if (imgSrc.startsWith('UklGR')) imgSrc = `data:image/webp;base64,${imgSrc}`;
-                            else imgSrc = `data:image/png;base64,${imgSrc}`;
-                        }
-
-                        // Immersive Mode
-                        card.classList.add('is-image');
-                        bgImgTag = `<img src="${imgSrc}" class="card-bg-img" alt="Background" onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#eee';">`;
-                        contentHtml = '';
                     }
                     if (item.type === 'url') { icon = '🔗'; typeName = 'LINK'; }
                     if (item.type === 'file') { icon = '📁'; typeName = 'FILE'; }
@@ -710,6 +722,29 @@ function escapeHtml(text) {
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
+        function safeImageSrc(raw) {
+            if (!raw) return '';
+            let src = String(raw).replace(/[\r\n\s]+/g, '');
+            if (src.startsWith('data:image/')) {
+                const allowed = [
+                    'data:image/png;base64,',
+                    'data:image/jpeg;base64,',
+                    'data:image/jpg;base64,',
+                    'data:image/gif;base64,',
+                    'data:image/webp;base64,',
+                    'data:image/bmp;base64,'
+                ];
+                if (!allowed.some((prefix) => src.startsWith(prefix))) return '';
+                return /["'<>]/.test(src) ? '' : src;
+            }
+            if (src.startsWith('/9j/')) src = `data:image/jpeg;base64,${src}`;
+            else if (src.startsWith('iVBORw')) src = `data:image/png;base64,${src}`;
+            else if (src.startsWith('R0lGOD')) src = `data:image/gif;base64,${src}`;
+            else if (src.startsWith('UklGR')) src = `data:image/webp;base64,${src}`;
+            else return '';
+            return /["'<>]/.test(src) ? '' : src;
+        }
+
         function showQRCode() {
             const modal = document.getElementById('qrModal');
             const content = document.getElementById('qrContent');
@@ -738,6 +773,146 @@ function escapeHtml(text) {
         fetch('/autostart').then(r => r.json()).then(d => {
             updateAutoStartBtn(d.enabled);
         });
+        // Canvas Logic
+        let canvas, ctx, isDrawing = false;
+        let lastX = 0, lastY = 0;
+
+        function showCanvas() {
+            const modal = document.getElementById('canvasModal');
+            modal.style.display = 'flex';
+            
+            // Init canvas after visible
+            setTimeout(initCanvas, 100);
+        }
+
+        function closeCanvas() {
+            document.getElementById('canvasModal').style.display = 'none';
+        }
+
+        function initCanvas() {
+            const container = document.getElementById('canvasContainer');
+            canvas = document.getElementById('drawingCanvas');
+            ctx = canvas.getContext('2d');
+
+            // Resize canvas to match display size
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+
+            // Style
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#000';
+
+            // Events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            // Touch support
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing);
+            
+            clearCanvas();
+        }
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const pos = getPos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getPos(e);
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function sendCanvas() {
+            const btn = document.getElementById('btnSendCanvas');
+            btn.innerText = '发送中...';
+            btn.disabled = true;
+
+            // Get Base64
+            const dataUrl = canvas.toDataURL('image/png');
+            
+            // Upload
+            fetch('/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'image',
+                    content: dataUrl, // Standard format
+                    meta: { filename: `drawing_${Date.now()}.png`, source: 'web_canvas' }
+                })
+            })
+            .then(r => r.json())
+            .then(d => {
+                if(d.status === 'success') {
+                    alert('✅ 发送成功！');
+                    closeCanvas();
+                    loadHistory();
+                } else {
+                    alert('发送失败: ' + d.message);
+                }
+            })
+            .catch(e => {
+                alert('网络错误');
+                console.error(e);
+            })
+            .finally(() => {
+                btn.innerText = '📤 发送到电脑';
+                btn.disabled = false;
+            });
+        }
+        
         loadHistory();
     </script>
 </body>

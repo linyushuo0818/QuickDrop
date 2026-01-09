@@ -11,6 +11,7 @@
 
 const express = require('express');
 const fs = require('fs');
+const fsp = fs.promises;
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const os = require('os');
@@ -19,6 +20,8 @@ const QRCode = require('qrcode');
 
 const app = express();
 const PORT = 3001;
+const MAX_BASE64_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_BASE64_FILE_BYTES = 50 * 1024 * 1024;
 function normalizePanelMode(value) {
     const mode = (value || '').toLowerCase();
     if (mode === 'app') return 'browser';
@@ -43,6 +46,7 @@ let config = {
     // 默认保存到桌面的 OmniDrop_Files 文件夹
     dataDir: path.join(os.homedir(), 'Desktop', 'OmniDrop_Files')
 };
+let historyCount = 0;
 
 function loadConfig() {
     try {
@@ -75,6 +79,58 @@ const getHistoryFile = () => path.join(config.dataDir, 'history.json');
 // 确保临时目录存在
 if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
+function sanitizeFileName(value) {
+    const name = path.basename(String(value || '')).trim();
+    if (!name) return '';
+    const cleaned = name
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return cleaned.slice(0, 200);
+}
+
+function resolveSafePath(baseDir, fileName) {
+    const safeName = sanitizeFileName(fileName);
+    if (!safeName) throw new Error('无效文件名');
+    const resolvedBase = path.resolve(baseDir);
+    const resolvedTarget = path.resolve(resolvedBase, safeName);
+    const relative = path.relative(resolvedBase, resolvedTarget);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+        throw new Error('非法文件路径');
+    }
+    return resolvedTarget;
+}
+
+function normalizeBase64(value) {
+    if (!value) return '';
+    return String(value)
+        .replace(/^data:[^;]+;base64,/, '')
+        .replace(/[\r\n\s]+/g, '');
+}
+
+function estimateBase64Bytes(base64) {
+    if (!base64) return 0;
+    let padding = 0;
+    if (base64.endsWith('==')) padding = 2;
+    else if (base64.endsWith('=')) padding = 1;
+    return Math.max(0, Math.floor((base64.length * 3) / 4) - padding);
+}
+
+function getSafeImageExtension(fileName) {
+    const ext = path.extname(fileName || '').replace('.', '').toLowerCase();
+    const allowed = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']);
+    return allowed.has(ext) ? ext : 'png';
+}
+
+function isSafeHttpUrl(value) {
+    try {
+        const url = new URL(String(value || ''));
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (e) {
+        return false;
+    }
+}
+
 
 // ========== Multer 配置 (文件上传) ==========
 const storage = multer.diskStorage({
@@ -85,7 +141,7 @@ const storage = multer.diskStorage({
     },
     filename: function (req, file, cb) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        const safeName = file.originalname.replace(/[<>:"/\\|?*]/g, '_');
+        const safeName = sanitizeFileName(file.originalname) || 'file';
         cb(null, `${timestamp}_${safeName}`);
     }
 });
@@ -101,29 +157,29 @@ const getTodayHistoryFile = () => {
 };
 
 // 原子写入 JSON (防止写入中断导致文件损坏)
-function writeJsonAtomic(filePath, data) {
+async function writeJsonAtomic(filePath, data) {
     const tempFile = `${filePath}.tmp`;
     try {
-        fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf8');
+        await fsp.writeFile(tempFile, JSON.stringify(data, null, 2), 'utf8');
         if (fs.existsSync(filePath)) {
-            try { fs.unlinkSync(filePath); } catch (e) { }
+            try { await fsp.unlink(filePath); } catch (e) { }
         }
-        fs.renameSync(tempFile, filePath);
+        await fsp.rename(tempFile, filePath);
     } catch (e) {
         console.error(`[存储] 原子写入失败: ${e.message}`);
-        try { fs.unlinkSync(tempFile); } catch (err) { }
+        try { await fsp.unlink(tempFile); } catch (err) { }
     }
 }
 
 /**
  * 读取最近 N 天的历史记录
  */
-function loadHistory() {
+async function loadHistory() {
     let allRecords = [];
     try {
         if (!fs.existsSync(config.dataDir)) return [];
 
-        const files = fs.readdirSync(config.dataDir).filter(f => f.match(/^history_\d{4}-\d{2}-\d{2}\.json$/));
+        const files = (await fsp.readdir(config.dataDir)).filter(f => f.match(/^history_\d{4}-\d{2}-\d{2}\.json$/));
         const today = new Date();
         const cutoff = new Date(today.getTime() - HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000);
 
@@ -138,7 +194,7 @@ function loadHistory() {
             if (fileDate >= cutoff || datePart === today.toISOString().split('T')[0]) {
                 try {
                     const filePath = path.join(config.dataDir, file);
-                    const fileContent = fs.readFileSync(filePath, 'utf8');
+                    const fileContent = await fsp.readFile(filePath, 'utf8');
                     const records = JSON.parse(fileContent);
                     if (Array.isArray(records)) {
                         allRecords = allRecords.concat(records);
@@ -150,7 +206,7 @@ function loadHistory() {
                 // 过期文件清理
                 try {
                     console.log(`[历史] 清理过期文件: ${file}`);
-                    fs.unlinkSync(path.join(config.dataDir, file));
+                    await fsp.unlink(path.join(config.dataDir, file));
                 } catch (e) { }
             }
         }
@@ -159,20 +215,22 @@ function loadHistory() {
     }
 
     // 内存中最后按时间戳倒序一下
-    return allRecords.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const sorted = allRecords.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    historyCount = sorted.length;
+    return sorted;
 }
 
 /**
  * 添加历史记录 (只写入当天的文件)
  */
-function addToHistory(type, content, meta) {
+async function addToHistory(type, content, meta) {
     // 1. 读取当天的记录
     const todayFile = getTodayHistoryFile();
     let todayRecords = [];
 
     try {
         if (fs.existsSync(todayFile)) {
-            todayRecords = JSON.parse(fs.readFileSync(todayFile, 'utf8'));
+            todayRecords = JSON.parse(await fsp.readFile(todayFile, 'utf8'));
         }
     } catch (e) {
         console.error('[历史] 读取当天记录失败，重置为空');
@@ -196,27 +254,29 @@ function addToHistory(type, content, meta) {
 
     // 3. 插入并保存 (新记录在前)
     todayRecords.unshift(record);
-    writeJsonAtomic(todayFile, todayRecords);
+    await writeJsonAtomic(todayFile, todayRecords);
+    historyCount += 1;
 
     return record;
 
 }
 
-function clearHistory() {
+async function clearHistory() {
     try {
         if (!fs.existsSync(config.dataDir)) return;
-        const files = fs.readdirSync(config.dataDir)
+        const files = (await fsp.readdir(config.dataDir))
             .filter((file) => /^history_\d{4}-\d{2}-\d{2}\.json$/.test(file));
         for (const file of files) {
-            try { fs.unlinkSync(path.join(config.dataDir, file)); } catch (e) { }
+            try { await fsp.unlink(path.join(config.dataDir, file)); } catch (e) { }
         }
     } catch (e) {
         console.error('[history] Clear failed:', e.message);
     }
+    historyCount = 0;
 }
 
 // 启动时清理一次 (触发 loadHistory 的懒清理逻辑)
-loadHistory();
+loadHistory().catch((e) => console.error('[历史记录] 启动加载失败:', e.message));
 
 // ========== 双向同步队列 ==========
 let pendingForIPad = null; // 等待 iPad 拉取的内容
@@ -392,19 +452,19 @@ async function handlePayload(payload) {
                 break;
 
             case 'url':
-                // 打开浏览器
-                const cmd = `cmd /c start "" "${content.replace(/&/g, '^&')}"`; // 恢复转义逻辑，之前是因为选中文字导致的问题
-                // 再次确认：cmd /c start "" "url" 是标准写法，^& 是必须的如果 url 含 &。
-                // 之前的 bug 是因为 content 本身不是 url。这里我们假设 content 已经是 url。
-                // 为了保险，先用不转义的简单版本，因为用户可能会乱传
-                const openChild = spawnHidden('explorer.exe', [content], {
-                    stdio: 'ignore',
-                    detached: true
-                });
-                openChild.on('error', (err) => console.error('[url open error]', err.message));
-                openChild.unref();
-                await copyTextToClipboard(content);
-                sendNotification('🔗 链接已打开', content);
+                // ????????? http/https?
+                if (isSafeHttpUrl(content)) {
+                    const openChild = spawnHidden('explorer.exe', [content], {
+                        stdio: 'ignore',
+                        detached: true
+                    });
+                    openChild.on('error', (err) => console.error('[url open error]', err.message));
+                    openChild.unref();
+                } else {
+                    console.warn('[url] unsafe url blocked:', content);
+                }
+                await copyTextToClipboard(String(content || ''));
+                sendNotification('?? ?????', String(content || ''));
                 break;
 
             case 'image':
@@ -414,11 +474,15 @@ async function handlePayload(payload) {
                     await copyImageToClipboard(content);
                 } else {
                     // 假设是 base64，需要保存为临时文件
-                    const buffer = Buffer.from(content.replace(/^data:image\/\w+;base64,/, ""), 'base64');
-                    const tempParams = meta && meta.filename ? meta.filename.split('.') : ['clipboard', 'png'];
-                    const ext = tempParams.length > 1 ? tempParams.pop() : 'png';
+                    const rawBase64 = normalizeBase64(content);
+                    const approxSize = estimateBase64Bytes(rawBase64);
+                    if (approxSize > MAX_BASE64_IMAGE_BYTES) {
+                        throw new Error('????');
+                    }
+                    const buffer = Buffer.from(rawBase64, 'base64');
+                    const ext = getSafeImageExtension(meta && meta.filename);
                     const tempFile = path.join(TEMP_DIR, `img_${Date.now()}.${ext}`);
-                    fs.writeFileSync(tempFile, buffer);
+                    await fsp.writeFile(tempFile, buffer);
                     await copyImageToClipboard(tempFile);
                     // 延时清理
                     setTimeout(() => { try { fs.unlinkSync(tempFile); } catch (e) { } }, 5000);
@@ -432,10 +496,15 @@ async function handlePayload(payload) {
                 // 如果 content 是 base64 (来自 iPad 直接传小文件)，则需要写入
                 if (!fs.existsSync(content) && content.length > 255) {
                     // base64 写入
-                    const buffer = Buffer.from(content, 'base64');
-                    const fname = (meta && meta.filename) ? meta.filename : `file_${Date.now()}.bin`;
-                    const savePath = path.join(config.dataDir, fname);
-                    fs.writeFileSync(savePath, buffer);
+                    const rawBase64 = normalizeBase64(content);
+                    const approxSize = estimateBase64Bytes(rawBase64);
+                    if (approxSize > MAX_BASE64_FILE_BYTES) {
+                        throw new Error('????');
+                    }
+                    const buffer = Buffer.from(rawBase64, 'base64');
+                    const fname = sanitizeFileName(meta && meta.filename) || `file_${Date.now()}.bin`;
+                    const savePath = resolveSafePath(config.dataDir, fname);
+                    await fsp.writeFile(savePath, buffer);
                     payload.content = savePath; // 更新 content 为路径
                     if (!meta || !meta.silent) sendNotification('📁 文件已接收', `保存位置: ${savePath}`);
                 } else {
@@ -449,7 +518,7 @@ async function handlePayload(payload) {
         }
 
         // 添加到历史记录
-        addToHistory(type, payload.content, meta);
+        await addToHistory(type, payload.content, meta);
 
         return result;
 
@@ -547,7 +616,7 @@ app.get('/health', (req, res) => {
         status: 'ok',
         message: 'LAN Clipboard v2 运行中',
         dataDir: config.dataDir,
-        historyCount: loadHistory().length
+        historyCount: historyCount
     });
 });
 
@@ -653,8 +722,8 @@ app.get('/qrcode', async (req, res) => {
  * 获取历史记录
  * GET /history
  */
-app.get('/history', (req, res) => {
-    const history = loadHistory();
+app.get('/history', async (req, res) => {
+    const history = await loadHistory();
     res.json({
         status: 'ok',
         count: history.length,
@@ -667,8 +736,8 @@ app.get('/history', (req, res) => {
  * 清空历史记录
  * DELETE /history
  */
-app.delete('/history', (req, res) => {
-    clearHistory();
+app.delete('/history', async (req, res) => {
+    await clearHistory();
     console.log('[历史记录] 已清空');
     res.json({ status: 'ok', message: '历史记录已清空' });
 });
@@ -748,14 +817,13 @@ app.get('/pull', (req, res) => {
  * GET /status
  */
 app.get('/status', (req, res) => {
-    const history = loadHistory();
     res.json({
         status: 'ok',
         version: '2.0',
         ip: getLocalIP(),
         port: PORT,
         dataDir: config.dataDir,
-        historyCount: history.length,
+        historyCount: historyCount,
         pendingForIPad: pendingForIPad !== null
     });
 });
