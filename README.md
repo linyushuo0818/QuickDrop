@@ -42,17 +42,3 @@ npm run build:installer
 
 ## 代码来源说明
 代码由 Gemini、Claude、GPT 生成，出现屎山代码属于正常现象。
-
-## GitHub 提交建议
-不建议提交 `dist/` 和 `node_modules/`。可通过 GitHub Releases 分发安装包。
-
-## 下载说明
-建议将安装包发布到 Releases（不是 Packages）：
-https://github.com/linyushuo0818/QuickDrop/releases/latest
-
-发布方式（自动）
-打 tag 即可触发 GitHub Actions 生成安装包并上传到 Releases：
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
