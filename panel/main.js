@@ -228,10 +228,10 @@ function createTray() {
     tray = new Tray(getTrayIcon());
     tray.setToolTip('OmniDrop');
     tray.setContextMenu(Menu.buildFromTemplate([
-        { label: '打开面板', click: () => showWindow() },
-        { label: '重启服务', click: () => restartServer() },
+        { label: 'Open Panel', click: () => showWindow() },
+        { label: 'Restart Service', click: () => restartServer() },
         { type: 'separator' },
-        { label: '退出', click: () => appQuit() }
+        { label: 'Quit', click: () => appQuit() }
     ]));
     tray.on('click', () => showWindow());
     tray.on('double-click', () => showWindow());
@@ -298,3 +298,4 @@ app.whenReady().then(async () => {
 app.on('activate', () => {
     showWindow();
 });
+

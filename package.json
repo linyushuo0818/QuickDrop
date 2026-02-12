@@ -1,6 +1,6 @@
 {
     "name": "lan-clipboard",
-    "version": "1.0.0",
+    "version": "1.4.0",
     "description": "局域网图片传输到剪贴板工具",
     "main": "server.js",
     "bin": "server.js",

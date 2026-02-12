@@ -1,883 +1,1606 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+﻿<!DOCTYPE html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OmniDrop Dashboard</title>
+    <title>OmniDrop</title>
     <style>
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
-:root {
-    --bg: #0c0f12;
-    --bg-2: #0f1318;
-    --card: rgba(18, 22, 28, 0.9);
-    --card-2: rgba(15, 19, 24, 0.8);
-    --stroke: rgba(255, 255, 255, 0.08);
-    --text: #f4f7f8;
-    --muted: rgba(244, 247, 248, 0.62);
-    --accent: #a4ff1a;
-    --accent-2: #ff6a00;
-    --success: #1ed760;
-}
+        /* ===== 色板变量 ===== */
+        :root {
+            --bg: #ede9e0;
+            --bg-elevated: #fbfaf6;
+            --bg-card: #f5f2eb;
+            --bg-card-hover: #efece4;
+            --ink: #1b1a18;
+            --ink-soft: #5b5954;
+            --ink-faint: #838079;
+            --line: rgba(0, 0, 0, .08);
+            --line-hover: rgba(0, 0, 0, .16);
+            --accent: #d97c5d;
+            --accent-bg: rgba(217, 124, 93, .12);
+            --shadow-sm: 0 2px 8px rgba(27, 26, 24, .06);
+            --shadow-md: 0 8px 24px rgba(27, 26, 24, .08);
+            --shadow-lg: 0 20px 42px rgba(27, 26, 24, .14);
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 8px;
+            --radius-pill: 999px;
+            --transition: .18s ease;
+            color-scheme: light dark;
+        }
 
-* {
-    box-sizing: border-box;
-}
+        /* ===== 暗色模式 ===== */
+        [data-theme="dark"] {
+            --bg: #161514;
+            --bg-elevated: #1e1d1b;
+            --bg-card: #262523;
+            --bg-card-hover: #2e2d2a;
+            --ink: #e8e4dc;
+            --ink-soft: #a8a49c;
+            --ink-faint: #706c64;
+            --line: rgba(255, 255, 255, .08);
+            --line-hover: rgba(255, 255, 255, .16);
+            --accent: #e08b6e;
+            --accent-bg: rgba(224, 139, 110, .14);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, .2);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, .25);
+            --shadow-lg: 0 20px 42px rgba(0, 0, 0, .4);
+        }
 
-body {
-    font-family: 'Archivo', 'Segoe UI', system-ui, sans-serif;
-    margin: 0;
-    color: var(--text);
-    min-height: 100vh;
-    background:
-        radial-gradient(1200px 600px at 20% -20%, rgba(164, 255, 26, 0.15), transparent 60%),
-        radial-gradient(900px 500px at 110% 10%, rgba(255, 106, 0, 0.18), transparent 60%),
-        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
-    position: relative;
-    overflow-x: hidden;
-}
+        /* ===== 全局基础 ===== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-    background-size: 32px 32px;
-    pointer-events: none;
-    z-index: 0;
-}
+        html,
+        body {
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: 'Manrope', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            -webkit-font-smoothing: antialiased;
+        }
 
-body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/></filter><rect width="140" height="140" filter="url(%23n)" opacity="0.08"/></svg>');
-    opacity: 0.25;
-    mix-blend-mode: soft-light;
-    pointer-events: none;
-    z-index: 0;
-}
+        /* 微弱暖光渐变装饰 */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(600px 260px at 100% -5%, rgba(217, 124, 93, .1), transparent 55%),
+                radial-gradient(500px 250px at -10% 110%, rgba(91, 89, 84, .07), transparent 50%);
+            z-index: 0;
+        }
 
-.wrapper {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 30px 24px 80px;
-    position: relative;
-    z-index: 1;
-}
+        .app {
+            position: relative;
+            z-index: 1;
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
 
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 26px;
-}
+        /* ===== ① 极简顶栏 ===== */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 4px;
+        }
 
-.brand {
-    font-family: 'Archivo', sans-serif;
-    font-size: 28px;
-    font-weight: 800;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+        .brand {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -.3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
 
-.brand::before {
-    content: '';
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
-    background: var(--accent);
-    box-shadow: 0 0 12px rgba(164, 255, 26, 0.6);
-}
+        /* 呼吸状态点 */
+        .alive-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 0 0 rgba(217, 124, 93, .5);
+            animation: breathe 2.4s infinite;
+            flex-shrink: 0;
+        }
 
-.status-badge {
-    font-size: 12px;
-    background: rgba(30, 215, 96, 0.18);
-    color: var(--success);
-    padding: 8px 14px;
-    border-radius: 999px;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid rgba(30, 215, 96, 0.35);
-}
+        .alive-dot.off {
+            background: var(--ink-faint);
+            box-shadow: none;
+            animation: none;
+            opacity: .5;
+        }
 
-.status-dot {
-    width: 8px;
-    height: 8px;
-    background: currentColor;
-    border-radius: 50%;
-}
+        @keyframes breathe {
+            0% {
+                box-shadow: 0 0 0 0 rgba(217, 124, 93, .4);
+            }
 
-.hero-section {
-    background: var(--card);
-    border: 1px solid var(--stroke);
-    border-radius: 24px;
-    padding: 22px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 220px;
-    gap: 20px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-}
+            70% {
+                box-shadow: 0 0 0 8px rgba(217, 124, 93, 0);
+            }
 
-.ip-display {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    min-width: 0;
-}
+            100% {
+                box-shadow: 0 0 0 0 rgba(217, 124, 93, 0);
+            }
+        }
 
-.ip-box {
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 24px;
-    font-weight: 700;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--text);
-    padding: 14px 18px;
-    border-radius: 14px;
-    letter-spacing: 0.2px;
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: all 0.2s ease;
-}
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-.ip-box:hover {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(164, 255, 26, 0.15);
-}
+        /* 通用小按钮 */
+        .icon-btn {
+            appearance: none;
+            border: 1px solid var(--line);
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--bg-elevated);
+            color: var(--ink-soft);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
 
-.hero-hint {
-    color: var(--muted);
-    font-size: 13px;
-    letter-spacing: 0.2px;
-}
+        .icon-btn:hover {
+            color: var(--ink);
+            border-color: var(--line-hover);
+        }
 
-.settings-row {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: stretch;
-}
+        .icon-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
 
-.btn {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--text);
-    padding: 0 18px;
-    height: 42px;
-    border-radius: 14px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
+        /* 齿轮下拉菜单 */
+        .gear-wrap {
+            position: relative;
+        }
 
-.btn:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
-}
+        .settings-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: min(300px, 84vw);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--line-hover);
+            background: var(--bg-elevated);
+            box-shadow: var(--shadow-lg);
+            padding: 6px;
+            display: none;
+            z-index: 50;
+        }
 
-.btn-primary {
-    background: linear-gradient(120deg, var(--accent), #d8ff6b);
-    border: none;
-    color: #0c0f12;
-    font-weight: 800;
-}
+        .settings-menu.open {
+            display: block;
+        }
 
-.btn-primary:hover {
-    box-shadow: 0 10px 24px rgba(164, 255, 26, 0.35);
-}
+        .menu-item {
+            width: 100%;
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            text-align: left;
+            color: var(--ink);
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+        }
 
-.action-btn {
-    width: 100%;
-    height: 48px;
-    justify-content: space-between;
-    padding: 0 18px;
-    background: rgba(255, 255, 255, 0.06);
-}
+        .menu-item:hover {
+            background: var(--accent-bg);
+        }
 
-.btn-on {
-    background: rgba(30, 215, 96, 0.25);
-    border-color: rgba(30, 215, 96, 0.45);
-    color: #c9ffd9;
-}
+        .menu-item:disabled {
+            opacity: .5;
+            cursor: wait;
+        }
 
-.btn-off {
-    background: rgba(255, 106, 0, 0.1);
-    border-color: rgba(255, 106, 0, 0.6);
-    color: #ffc6a6;
-}
+        .menu-icon {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            color: var(--ink-faint);
+        }
 
-.section-title {
-    margin: 32px 0 16px;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    color: var(--muted);
-}
+        .menu-icon svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
+        }
 
-.grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 18px;
-}
+        .menu-label {
+            flex: 1;
+        }
 
-.card {
-    background: var(--card-2);
-    border: 1px solid var(--stroke);
-    border-radius: 18px;
-    padding: 18px;
-    min-height: 180px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    transition: all 0.25s ease;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-}
+        .menu-tag {
+            font-size: 11px;
+            color: var(--ink-faint);
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
 
-.card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(164, 255, 26, 0.5);
-    box-shadow: 0 18px 28px rgba(0, 0, 0, 0.4);
-}
+        /* ===== ② 连接信息条 ===== */
+        .connect-bar {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: stretch;
+        }
 
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-}
+        .connect-cell {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-md);
+            background: var(--bg-elevated);
+            color: var(--ink);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            text-align: left;
+        }
 
-.card-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-}
+        .connect-cell:hover {
+            border-color: var(--line-hover);
+        }
 
-.card-body {
-    flex: 1;
-    margin: 12px 0;
-    font-size: 13px;
-    color: var(--text);
-    line-height: 1.5;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    word-break: break-all;
-}
+        /* IP 区域 */
+        .ip-cell {
+            flex: 1;
+            min-width: 0;
+        }
 
-.card-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11px;
-    color: var(--muted);
-}
+        .ip-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--ink-faint);
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
 
-.copy-btn {
-    width: 30px;
-    height: 30px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: 0.2s;
-    color: var(--muted);
-}
+        .ip-value {
+            font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -.01em;
+            white-space: nowrap;
+        }
 
-.copy-btn:hover {
-    color: var(--text);
-    border-color: rgba(255, 255, 255, 0.35);
-}
+        .ip-port {
+            color: var(--ink-faint);
+            font-weight: 400;
+        }
 
-.bg-red { background: rgba(255, 106, 0, 0.18); color: #ffb47f; }
-.bg-blue { background: rgba(61, 153, 255, 0.2); color: #9ed0ff; }
-.bg-green { background: rgba(30, 215, 96, 0.2); color: #b6f5c9; }
-.bg-yellow { background: rgba(255, 214, 10, 0.2); color: #ffe9a6; }
-.bg-purple { background: rgba(255, 255, 255, 0.12); color: #e4e4e4; }
+        /* QR 气泡（hover 时从下方浮出，避免被窗口顶部裁剪） */
+        .qr-bubble {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 16px;
+            width: 200px;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--line-hover);
+            background: var(--bg-elevated);
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-6px);
+            transition: opacity .22s ease, transform .22s ease, visibility .22s ease;
+            z-index: 40;
+            pointer-events: none;
+        }
 
-.card.is-image {
-    border: none;
-    background: #0f1114;
-}
+        /* QR 气泡无尖角 */
 
-.card-bg-img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 18px;
-    z-index: 0;
-}
+        .connect-cell:hover .qr-bubble {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
 
-.card.is-image::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.7) 100%);
-    z-index: 1;
-}
+        .qr-bubble img {
+            width: 100%;
+            border-radius: var(--radius-sm);
+            display: block;
+        }
 
-.card.is-image .card-header,
-.card.is-image .card-footer {
-    position: relative;
-    z-index: 2;
-}
+        .qr-bubble-hint {
+            text-align: center;
+            font-size: 10px;
+            color: var(--ink-faint);
+            margin-top: 6px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
 
-.card.is-image .card-body {
-    display: none;
-}
+        /* 路径区域 */
+        .path-cell {
+            gap: 10px;
+        }
 
-.card.is-image .card-footer {
-    color: rgba(255, 255, 255, 0.85);
-}
+        .folder-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--ink-faint);
+            flex-shrink: 0;
+        }
 
-.card.is-image .card-icon,
-.card.is-image .copy-btn {
-    background: rgba(255, 255, 255, 0.15) !important;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
+        .folder-icon svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
+        }
 
-/* Modal */
-.modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(6px);
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
+        .path-info {
+            min-width: 0;
+            flex: 1;
+        }
 
-.modal {
-    background: #11151b;
-    padding: 24px;
-    border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    width: 90%;
-    max-width: 360px;
-    text-align: center;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-}
+        .path-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--ink-faint);
+            font-weight: 700;
+        }
 
-.close-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text);
-    border: none;
-    padding: 8px 16px;
-    border-radius: 12px;
-    cursor: pointer;
-    margin-top: 15px;
-    font-weight: 600;
-}
+        .path-value {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 15px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-.qr-placeholder {
-    width: 180px;
-    height: 180px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    margin: 16px auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--muted);
-    font-size: 12px;
-}
+        .path-chev {
+            color: var(--ink-faint);
+            font-size: 14px;
+            font-weight: 700;
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
 
-@media (max-width: 760px) {
-    .header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+        .path-cell:hover .path-chev {
+            color: var(--ink);
+        }
 
-    .hero-section {
-        grid-template-columns: 1fr;
-    }
+        /* ===== ③ 收件箱 ===== */
+        .inbox {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: var(--bg-elevated);
+            padding: 14px;
+        }
 
-    .ip-box {
-        font-size: 18px;
-    }
-}
-</style>
+        .inbox-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .inbox-count {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 12px;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            font-weight: 700;
+        }
+
+        .inbox-filters {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .chip {
+            appearance: none;
+            border: 1px solid var(--line);
+            background: transparent;
+            color: var(--ink-soft);
+            border-radius: var(--radius-pill);
+            padding: 5px 10px;
+            font-size: 11px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            font-weight: 700;
+            font-family: 'Fraunces', Georgia, serif;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .chip:hover {
+            border-color: var(--line-hover);
+            color: var(--ink);
+        }
+
+        .chip.active {
+            background: var(--accent-bg);
+            color: var(--accent);
+            border-color: transparent;
+        }
+
+        /* 卡片网格：4 列 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 10px;
+        }
+
+        /* 空状态 — 精致插画风 */
+        .empty {
+            grid-column: 1 / -1;
+            border: 1px dashed var(--line-hover);
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-elevated) 100%);
+            text-align: center;
+            color: var(--ink-soft);
+            padding: 56px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        .empty-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            background: var(--accent-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+        }
+
+        .empty-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .empty-title {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 4px;
+        }
+
+        .empty-sub {
+            color: var(--ink-faint);
+            font-size: 13px;
+        }
+
+        /* ===== 记录卡片 ===== */
+        .card {
+            position: relative;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--line);
+            background: var(--bg-card);
+            min-height: 160px;
+            padding: 14px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            border-color: var(--line-hover);
+            background: var(--bg-card-hover);
+        }
+
+        .card:active {
+            transform: scale(.985);
+        }
+
+        /* 图片类型卡片 */
+        .card.is-image {
+            padding: 0;
+            min-height: 180px;
+            background: #151413;
+        }
+
+        .card.is-image::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(180deg,
+                    rgba(0, 0, 0, .04) 0%,
+                    rgba(0, 0, 0, .02) 40%,
+                    rgba(0, 0, 0, .5) 100%);
+            pointer-events: none;
+        }
+
+        .card-img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+        }
+
+        /* 卡片时间标签（左上角） */
+        .card-time {
+            position: relative;
+            z-index: 2;
+            font-size: 11px;
+            color: var(--ink-faint);
+            font-weight: 600;
+            text-align: left;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .card.is-image .card-time {
+            color: rgba(255, 255, 255, .75);
+            padding: 12px 14px 0;
+        }
+
+        /* 卡片内容 */
+        .card-body {
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            color: var(--ink-soft);
+            font-size: 14px;
+            line-height: 1.55;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+        }
+
+        .card.is-image .card-body {
+            display: none;
+        }
+
+        /* URL 特殊样式 */
+        .card-body-url {
+            text-decoration: underline;
+            text-decoration-color: rgba(48, 80, 105, .3);
+            text-underline-offset: 3px;
+            color: #305069;
+        }
+
+        [data-theme="dark"] .card-body-url {
+            color: #7ab5d6;
+            text-decoration-color: rgba(122, 181, 214, .3);
+        }
+
+        /* 卡片文件名（底部小字） */
+        .card-meta {
+            position: relative;
+            z-index: 2;
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--ink-faint);
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 卡片底部：仅删除按钮，右对齐 */
+        .card-footer {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .card.is-image .card-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px 14px;
+        }
+
+        /* 删除按钮 */
+        .del-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--ink-faint);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .del-btn svg {
+            width: 13px;
+            height: 13px;
+            fill: currentColor;
+        }
+
+        .card:hover .del-btn {
+            opacity: .6;
+        }
+
+        .del-btn:hover {
+            opacity: 1 !important;
+            color: #b94a3a;
+            background: rgba(185, 74, 58, .1);
+        }
+
+        .card.is-image .del-btn {
+            color: rgba(255, 255, 255, .7);
+        }
+
+        .card.is-image .del-btn:hover {
+            color: #fff;
+            background: rgba(255, 80, 60, .3);
+        }
+
+        /* 预览按钮（图片卡片专用） */
+        .preview-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--ink-faint);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .preview-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        .card:hover .preview-btn {
+            opacity: .6;
+        }
+
+        .preview-btn:hover {
+            opacity: 1 !important;
+            color: var(--ink);
+            background: var(--accent-bg);
+        }
+
+        .card.is-image .preview-btn {
+            color: rgba(255, 255, 255, .7);
+        }
+
+        .card.is-image .preview-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, .15);
+        }
+
+        /* ===== 弹窗 ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(16, 14, 12, .5);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        /* QR 弹窗 */
+        .modal {
+            width: min(420px, 100%);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--line-hover);
+            background: var(--bg-elevated);
+            box-shadow: var(--shadow-lg);
+            padding: 20px;
+        }
+
+        .modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -.3px;
+        }
+
+        .modal-sub {
+            margin-top: 2px;
+            color: var(--ink-faint);
+            font-size: 13px;
+        }
+
+        .close-btn {
+            appearance: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid var(--line);
+            background: var(--bg-card);
+            color: var(--ink-soft);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .close-btn svg {
+            width: 15px;
+            height: 15px;
+            fill: currentColor;
+        }
+
+        .close-btn:hover {
+            color: var(--ink);
+            border-color: var(--line-hover);
+        }
+
+        .qr-box {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-md);
+            background: var(--bg-card);
+            min-height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .qr-box img {
+            max-width: 260px;
+            width: 100%;
+            border-radius: var(--radius-sm);
+        }
+
+        .qr-url {
+            margin-top: 10px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            background: var(--bg-card);
+            padding: 9px 12px;
+            color: var(--ink-soft);
+            font-size: 12px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            word-break: break-all;
+            cursor: copy;
+            transition: var(--transition);
+        }
+
+        .qr-url:hover {
+            color: var(--ink);
+            border-color: var(--accent);
+        }
+
+        /* 图片预览弹窗 */
+        .image-preview {
+            width: min(86vw, 920px);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: #111;
+            border: 1px solid rgba(255, 255, 255, .15);
+            box-shadow: 0 24px 56px rgba(0, 0, 0, .5);
+        }
+
+        .image-preview img {
+            display: block;
+            width: 100%;
+            max-height: 84vh;
+            object-fit: contain;
+        }
+
+        /* ===== Toast ===== */
+        .toast-wrap {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            z-index: 1300;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: none;
+        }
+
+        .toast {
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--line);
+            background: var(--bg-elevated);
+            color: var(--ink);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 12px;
+            opacity: 0;
+            transform: translateY(6px);
+            animation: toast-in .2s ease forwards;
+        }
+
+        .toast.ok {
+            border-color: rgba(63, 127, 91, .4);
+        }
+
+        .toast.error {
+            border-color: rgba(185, 74, 58, .4);
+        }
+
+        @keyframes toast-in {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 900px) {
+            .connect-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .app {
+                padding: 12px;
+            }
+
+            .inbox {
+                border-radius: var(--radius-md);
+                padding: 10px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .card {
+                min-height: 140px;
+            }
+
+            .inbox-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div class="header">
-        <div class="brand">OmniDrop</div>
-        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <div class="status-badge"><span class="status-dot"></span>RUNNING</div>
-            <button id="btnAutoStart" class="btn" onclick="toggleAutostart()">?? ????: ...</button>
-            <button class="btn" onclick="showQRCode()">?? ????</button>
-            <button class="btn btn-primary" onclick="showCanvas()">?? ????</button>
-            <button class="btn" onclick="loadHistory()">? ??</button>
+    <div class="app">
+
+        <!-- ① 极简顶栏 -->
+        <header class="topbar">
+            <h1 class="brand">OmniDrop <span id="aliveDot" class="alive-dot"></span></h1>
+            <div class="topbar-right">
+                <!-- 刷新按钮（高频操作，拉出） -->
+                <button id="btnRefresh" class="icon-btn" type="button" title="Refresh" aria-label="Refresh"
+                    onclick="loadHistory()">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24L14 10h6V4l-2.35 2.35Z" />
+                    </svg>
+                </button>
+                <!-- 主题切换 -->
+                <button id="btnTheme" class="icon-btn" type="button" title="Toggle theme" aria-label="Toggle theme">
+                    <svg id="themeIcon" viewBox="0 0 24 24">
+                        <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 16V5a7 7 0 1 1 0 14Z" />
+                    </svg>
+                </button>
+                <!-- 齿轮菜单 -->
+                <div class="gear-wrap">
+                    <button id="btnSettings" class="icon-btn" type="button" title="Settings" aria-label="Settings">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M19.14 12.94a7.48 7.48 0 0 0 .05-.94c0-.32-.02-.63-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94L14.4 2.8a.5.5 0 0 0-.5-.4h-3.8a.5.5 0 0 0-.5.4l-.36 2.52c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.62-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.4 1.05.72 1.63.94l.36 2.52a.5.5 0 0 0 .5.4h3.8a.5.5 0 0 0 .5-.4l.36-2.52c.58-.22 1.12-.54 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+                        </svg>
+                    </button>
+                    <div id="settingsMenu" class="settings-menu" role="menu">
+                        <button id="menuAutoStart" class="menu-item" type="button" onclick="toggleAutostart()">
+                            <span class="menu-icon"><svg viewBox="0 0 24 24">
+                                    <path
+                                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2Zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9Z" />
+                                </svg></span>
+                            <span class="menu-label">Auto Start</span>
+                            <span id="menuAutoState" class="menu-tag">—</span>
+                        </button>
+                        <button id="menuOpenDir" class="menu-item" type="button" onclick="openDir()">
+                            <span class="menu-icon"><svg viewBox="0 0 24 24">
+                                    <path
+                                        d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2Z" />
+                                </svg></span>
+                            <span class="menu-label">Open Folder</span>
+                        </button>
+                        <button id="menuSelectPath" class="menu-item" type="button" onclick="selectFolder()">
+                            <span class="menu-icon"><svg viewBox="0 0 24 24">
+                                    <path
+                                        d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" />
+                                </svg></span>
+                            <span class="menu-label">Change Path</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ② 连接信息条 -->
+        <div class="connect-bar">
+            <!-- IP + QR hover -->
+            <button id="ipCell" class="connect-cell" type="button" onclick="copyIP()" title="Click to copy address">
+                <div class="ip-cell">
+                    <div class="ip-value">
+                        <span id="ipHost">—</span><span id="ipPort" class="ip-port"></span>
+                    </div>
+                </div>
+                <!-- QR 气泡 -->
+                <div id="qrBubble" class="qr-bubble">
+                    <div id="qrBubbleContent">Loading…</div>
+                    <div class="qr-bubble-hint">Scan to connect iPad</div>
+                </div>
+            </button>
+
+            <!-- 保存路径 -->
+            <button class="connect-cell path-cell" type="button" onclick="selectFolder()" title="Change save path">
+                <span class="folder-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M3 6.5A2.5 2.5 0 0 1 5.5 4h4.1l1.2 1.4c.28.33.68.52 1.11.52H18.5A2.5 2.5 0 0 1 21 8.46l-1.3 8.5A2.5 2.5 0 0 1 17.24 19H6.76a2.5 2.5 0 0 1-2.46-2.04L3 8.46V6.5Z" />
+                    </svg>
+                </span>
+                <div class="path-info">
+                    <div id="savePathDisplay" class="path-value">—</div>
+                </div>
+                <span class="path-chev">›</span>
+            </button>
         </div>
-    </div>
-<div style="display:flex; gap:10px; align-items:center;">
-            <button id="btnAutoStart" class="btn" onclick="toggleAutostart()">🚀 开机自启</button>
-            <button class="btn" onclick="showQRCode()">📱 扫码连接</button>
-            <button class="btn btn-primary" onclick="showCanvas()">✍️ 手写板</button>
-            <button class="btn" onclick="loadHistory()">🔄 刷新</button>
-        </div>
+
+        <!-- ③ 收件箱 -->
+        <section class="inbox">
+            <div class="inbox-header">
+                <span id="recordsCount" class="inbox-count">0 items</span>
+                <div class="inbox-filters">
+                    <button class="chip active" data-filter="all">All</button>
+                    <button class="chip" data-filter="text">Text</button>
+                    <button class="chip" data-filter="url">URL</button>
+                    <button class="chip" data-filter="file">File</button>
+                    <button class="chip" data-filter="image">Image</button>
+                </div>
+            </div>
+            <div id="gridContainer" class="grid">
+                <div class="empty">Loading…</div>
+            </div>
+        </section>
     </div>
 
-    <!-- QR Code Modal -->
-    <div class="modal-overlay" id="qrModal" onclick="if(event.target===this)this.style.display='none'">
+    <!-- QR 弹窗（点击 IP 区域内的 QR 气泡时也可以打开） -->
+    <div id="qrModal" class="modal-overlay" onclick="if(event.target===this)hideModal('qrModal')">
         <div class="modal">
-            <h3 style="margin:0 0 10px 0;">iPad ????</h3>
-            <p style="color:var(--muted); font-size:13px; margin:0;">? iPad ?????????</p>
-            <div id="qrContent" class="qr-placeholder">???...</div>
-            <div style="font-family: 'JetBrains Mono', monospace; background: rgba(255,255,255,0.08); padding:8px; border-radius:10px; font-size:12px; word-break:break-all; color: var(--text);" id="qrUrl"></div>
-            <button class="close-btn" onclick="document.getElementById('qrModal').style.display='none'">??</button>
-        </div>
-    </div>
-
-    <!-- Canvas Modal -->
-    <div class="modal-overlay" id="canvasModal" style="z-index: 2000;">
-        <div class="modal" style="width: 95%; max-width: 900px; height: 80vh; max-height: 860px; display: flex; flex-direction: column; padding: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="margin:0;">????</h3>
-                <button class="close-btn" style="margin:0; padding: 6px 14px;" onclick="closeCanvas()">??</button>
-            </div>
-            
-            <div style="flex: 1; border: 1px dashed rgba(255,255,255,0.25); border-radius: 16px; position: relative; overflow: hidden; background: #ffffff; cursor: crosshair;" id="canvasContainer">
-                <canvas id="drawingCanvas" style="display: block; width: 100%; height: 100%; touch-action: none;"></canvas>
-            </div>
-
-            <div style="margin-top: 15px; display: flex; gap: 15px; justify-content: center;">
-                <button class="btn" onclick="clearCanvas()">?? ??</button>
-                <button class="btn btn-primary" onclick="sendCanvas()" id="btnSendCanvas">?? ?????</button>
-            </div>
-        </div>
-    </div>
-    </div>
-
-    <div class="wrapper">
-        <div class="hero-section">
-            <div class="ip-display">
-                <div class="ip-box" onclick="copyIP()" id="ipArea">{{SERVER_ADDRESS}}</div>
-                <div class="hero-hint" id="copyHint">???? ? ??? iPad ????</div>
-            </div>
-            <div class="settings-row">
-                <button class="btn action-btn" onclick="openDir()">
-                    <span style="font-size:18px;">??</span>
-                    <span style="flex:1; text-align:left;">?????</span>
-                </button>
-                <button class="btn action-btn" onclick="selectFolder()">
-                    <span style="font-size:18px;">??</span>
-                    <span style="flex:1; text-align:left;">????</span>
+            <div class="modal-head">
+                <div>
+                    <h3 class="modal-title">Connect iPad</h3>
+                    <p class="modal-sub">Scan with your setup shortcut.</p>
+                </div>
+                <button class="close-btn" type="button" onclick="hideModal('qrModal')" aria-label="Close">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="m7.05 5.64 4.95 4.95 4.95-4.95 1.41 1.41L13.41 12l4.95 4.95-1.41 1.41L12 13.41l-4.95 4.95-1.41-1.41L10.59 12 5.64 7.05Z" />
+                    </svg>
                 </button>
             </div>
-        </div>
-
-        <div class="section-title">🕒 最近传输 (History)</div>
-        <div id="gridContainer" class="grid-container">
-            <div style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">加载中...</div>
+            <div id="qrContent" class="qr-box">Loading QR…</div>
+            <div id="qrUrl" class="qr-url" onclick="copyQRUrl()">—</div>
         </div>
     </div>
+
+    <!-- 图片预览弹窗 -->
+    <div id="imageModal" class="modal-overlay" onclick="if(event.target===this)hideModal('imageModal')">
+        <div class="image-preview">
+            <img id="imagePreviewTag" alt="Preview">
+        </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div id="toastWrap" class="toast-wrap" aria-live="polite"></div>
 
     <script>
-        const colors = ['bg-red', 'bg-blue', 'bg-green', 'bg-yellow', 'bg-purple'];
+        /* ===== 全局状态 ===== */
+        let allRecords = [];
+        let activeFilter = 'all';
+        let serverAddress = '{{SERVER_ADDRESS}}';
+        let cachedQr = null;
 
-
-
-        function copyIP() {
-            const text = document.getElementById('ipArea').innerText;
-            copyToClipboard(text, () => {
-                const hint = document.getElementById('copyHint');
-                hint.innerText = "✅ 已复制到剪贴板";
-                hint.style.color = "var(--success-color)";
-                setTimeout(() => {
-                    hint.innerText = "点击复制 -> 粘贴到 iPad 快捷指令";
-                    hint.style.color = "var(--text-secondary)";
-                }, 2000);
+        /* ===== 主题切换 ===== */
+        // 中文注释：初始化主题，优先读 localStorage，其次跟随系统
+        function initTheme() {
+            const saved = localStorage.getItem('omnidrop-theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+            // 监听系统变化（仅当用户未手动设置时）
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('omnidrop-theme')) {
+                    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+                }
             });
         }
 
-        async function copyToClipboard(text, onSuccess, type = 'text') {
-            try {
-                if (type === 'image' && navigator.clipboard && navigator.clipboard.write) {
-                    try {
-                        const response = await fetch(text);
-                        const blob = await response.blob();
-                        await navigator.clipboard.write([
-                            new ClipboardItem({ [blob.type]: blob })
-                        ]);
-                        onSuccess();
-                        return;
-                    } catch (err) {
-                        console.warn('Image copy failed, falling back to text', err);
-                    }
-                }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('omnidrop-theme', next);
+        }
 
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(text).then(onSuccess, () => fallbackCopy(text, onSuccess));
-                } else {
-                    fallbackCopy(text, onSuccess);
-                }
-            } catch (e) {
-                console.error('Copy failed', e);
-                alert('复制失败');
+        /* ===== Toast 提示 ===== */
+        function showToast(message, type = 'ok', duration = 2200) {
+            const wrap = document.getElementById('toastWrap');
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.textContent = message;
+            wrap.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(6px)';
+                setTimeout(() => el.remove(), 180);
+            }, duration);
+        }
+
+        /* ===== 工具函数 ===== */
+        function setButtonLoading(btn, loading) {
+            if (!btn) return;
+            btn.disabled = loading;
+        }
+
+        async function withLoading(btn, runner) {
+            try {
+                setButtonLoading(btn, true);
+                return await runner();
+            } finally {
+                setButtonLoading(btn, false);
             }
         }
 
-        function fallbackCopy(text, onSuccess) {
-            const ta = document.createElement("textarea");
-            ta.value = text;
-            ta.style.position = "fixed";
-            ta.style.top = "0";
-            document.body.appendChild(ta);
-            ta.select();
+        function hideModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('open');
+        }
+
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        /* ===== 地址处理 ===== */
+        // 中文注释：把地址拆分为 host + port 两部分展示
+        function normalizeAddress(raw) {
+            const input = String(raw || '').trim();
+            if (!input) return { full: '', host: '—', port: '' };
+
+            let withProtocol = input;
+            if (!/^https?:\/\//i.test(withProtocol)) {
+                withProtocol = `http://${withProtocol}`;
+            }
+
             try {
-                if (document.execCommand('copy')) onSuccess();
-                else alert('复制失败，请手动复制');
-            } catch (e) { alert('复制失败'); }
-            document.body.removeChild(ta);
-        }
-
-        function loadHistory() {
-            const container = document.getElementById('gridContainer');
-            fetch('/history').then(r => r.json()).then(data => {
-                container.innerHTML = '';
-                if (!data.records || data.records.length === 0) {
-                    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">暂无记录</div>';
-                    return;
+                const parsed = new URL(withProtocol);
+                return {
+                    full: withProtocol,
+                    host: parsed.hostname || '—',
+                    port: parsed.port ? `:${parsed.port}` : ''
+                };
+            } catch {
+                const noProto = input.replace(/^https?:\/\//i, '');
+                const idx = noProto.lastIndexOf(':');
+                if (idx > 0) {
+                    return {
+                        full: withProtocol,
+                        host: noProto.slice(0, idx),
+                        port: noProto.slice(idx)
+                    };
                 }
-
-                data.records.slice(0, 20).forEach((item, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.setAttribute('data-type', item.type);
-
-                    const colorClass = colors[index % colors.length];
-                    let icon = '📄';
-                    let typeName = 'TEXT';
-                    let contentHtml = `<div class="card-text">${escapeHtml(item.preview)}</div>`;
-                    let bgImgTag = '';
-
-                    if (item.type === 'image') {
-                        icon = '???';
-                        typeName = 'IMAGE';
-
-                        const imgSrc = safeImageSrc(item.content);
-    
-                        if (imgSrc) {
-                            // Immersive Mode
-                            card.classList.add('is-image');
-                            bgImgTag = `<img src="${imgSrc}" class="card-bg-img" alt="Background" onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#eee';">`;
-                            contentHtml = '';
-                        } else {
-                            contentHtml = '<div class="card-text">?????????</div>';
-                        }
-                    }
-                    if (item.type === 'url') { icon = '🔗'; typeName = 'LINK'; }
-                    if (item.type === 'file') { icon = '📁'; typeName = 'FILE'; }
-
-                    const timeStr = new Date(item.timestamp).toLocaleTimeString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-                    card.innerHTML = `
-                        ${bgImgTag}
-                        <div class="card-header">
-                            <div class="card-icon ${colorClass}">${icon}</div>
-                            <div class="action-row" style="display:flex; gap:5px;">
-                                <div class="copy-btn copy-clip-btn" title="复制到电脑">📋</div>
-                            </div>
-                        </div>
-                        <div class="card-body" style="overflow:hidden;">${contentHtml}</div>
-                        <div class="card-footer">
-                            <span>${typeName}</span>
-                            <span>${timeStr}</span>
-                        </div>
-                    `;
-
-                    // Events
-                    const copyBtn = card.querySelector('.copy-clip-btn');
-                    if (copyBtn) copyBtn.onclick = (e) => { e.stopPropagation(); copyToClipboard(item.content, () => alert('✅ 已复制'), item.type); };
-
-                    const pushBtn = card.querySelector('.push-btn');
-                    if (pushBtn) pushBtn.onclick = (e) => { e.stopPropagation(); pushToiPad(item); };
-
-                    card.onclick = () => copyToClipboard(item.content, () => alert('✅ 内容已复制'), item.type);
-                    container.appendChild(card);
-                });
-            }).catch(e => {
-                console.error(e);
-                container.innerHTML = '<div style="text-align:center; padding:20px;">加载失败</div>';
-            });
-        }
-
-
-
-        function toggleAutostart() {
-            const btn = document.getElementById('btnAutoStart');
-            const isEnabled = btn.classList.contains('btn-on');
-            const newState = !isEnabled;
-
-            fetch('/autostart', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enabled: newState })
-            }).then(r => r.json()).then(data => {
-                if (data.status === 'success') {
-                    updateAutoStartBtn(newState);
-                } else alert('设置失败');
-            });
-        }
-
-        function updateAutoStartBtn(enabled) {
-            const btn = document.getElementById('btnAutoStart');
-            if (enabled) {
-                btn.classList.add('btn-on');
-                btn.classList.remove('btn-off');
-                btn.innerHTML = '🚀 开机自启: ON';
-            } else {
-                btn.classList.add('btn-off');
-                btn.classList.remove('btn-on');
-                btn.innerHTML = '🚀 开机自启: OFF';
+                return { full: withProtocol, host: noProto || '—', port: '' };
             }
         }
 
-        function openDir() { fetch('/open-dir', { method: 'POST' }); }
-
-        
-        function selectFolder() {
-            fetch('/select-folder', { method: 'POST' })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.status !== 'success') return;
-                    fetch('/config', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ dataDir: d.path })
-                    }).then(r => r.json()).then(cfg => {
-                        if (cfg.status === 'success') alert('??????????????? ' + d.path);
-                        else alert('????????????: ' + (cfg.message || ''));
-                    });
-                });
+        function applyAddress(address) {
+            const data = normalizeAddress(address);
+            serverAddress = data.full;
+            document.getElementById('ipHost').textContent = data.host;
+            document.getElementById('ipPort').textContent = data.port || ':3001';
         }
 
-function escapeHtml(text) {
-            if (!text) return '';
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        /* ===== 路径语义化 ===== */
+        // 中文注释：把 Windows 路径转为可读的语义显示，去掉盘符冠号
+        function formatPathDisplay(fullPath) {
+            const raw = String(fullPath || '').trim();
+            if (!raw) return 'Unknown';
+
+            const parts = raw.split(/[\\/]+/).filter(Boolean);
+            if (parts.length === 0) return raw;
+
+            // 去掉盘符后面的冒号，如 "E:" → "E"
+            const clean = (s) => s.replace(/:$/, '');
+
+            const preferred = ['Desktop', 'Downloads', 'Documents', 'Pictures', 'Music', 'Videos'];
+            for (let i = parts.length - 1; i >= 0; i--) {
+                if (preferred.includes(parts[i])) return parts[i];
+            }
+
+            if (parts.length >= 3) return `${clean(parts[parts.length - 2])} › ${clean(parts[parts.length - 1])}`;
+            if (parts.length >= 2) return `${clean(parts[parts.length - 2])} › ${clean(parts[parts.length - 1])}`;
+            return clean(parts[parts.length - 1]);
         }
 
+        /* ===== 图片安全处理 ===== */
         function safeImageSrc(raw) {
             if (!raw) return '';
             let src = String(raw).replace(/[\r\n\s]+/g, '');
             if (src.startsWith('data:image/')) {
-                const allowed = [
-                    'data:image/png;base64,',
-                    'data:image/jpeg;base64,',
-                    'data:image/jpg;base64,',
-                    'data:image/gif;base64,',
-                    'data:image/webp;base64,',
-                    'data:image/bmp;base64,'
-                ];
-                if (!allowed.some((prefix) => src.startsWith(prefix))) return '';
+                const allowed = ['data:image/png;base64,', 'data:image/jpeg;base64,', 'data:image/jpg;base64,', 'data:image/gif;base64,', 'data:image/webp;base64,', 'data:image/bmp;base64,'];
+                if (!allowed.some((p) => src.startsWith(p))) return '';
                 return /["'<>]/.test(src) ? '' : src;
             }
             if (src.startsWith('/9j/')) src = `data:image/jpeg;base64,${src}`;
             else if (src.startsWith('iVBORw')) src = `data:image/png;base64,${src}`;
             else if (src.startsWith('R0lGOD')) src = `data:image/gif;base64,${src}`;
             else if (src.startsWith('UklGR')) src = `data:image/webp;base64,${src}`;
+            else if (src.startsWith('Qk')) src = `data:image/bmp;base64,${src}`;
             else return '';
             return /["'<>]/.test(src) ? '' : src;
         }
 
-        function showQRCode() {
-            const modal = document.getElementById('qrModal');
-            const content = document.getElementById('qrContent');
-            const urlText = document.getElementById('qrUrl');
-
-            modal.style.display = 'flex';
-            content.innerHTML = '加载中...';
-            urlText.innerText = '';
-
-            fetch('/qrcode')
-                .then(r => r.json())
-                .then(d => {
-                    if (d.status === 'success') {
-                        content.innerHTML = `<img src="${d.qrData}" style="width:100%;height:100%;">`;
-                        urlText.innerText = d.url;
-                    } else {
-                        content.innerHTML = '加载失败: ' + d.message;
-                    }
-                })
-                .catch(e => {
-                    content.innerHTML = '网络错误';
-                });
-        }
-
-        // Init
-        fetch('/autostart').then(r => r.json()).then(d => {
-            updateAutoStartBtn(d.enabled);
-        });
-        // Canvas Logic
-        let canvas, ctx, isDrawing = false;
-        let lastX = 0, lastY = 0;
-
-        function showCanvas() {
-            const modal = document.getElementById('canvasModal');
-            modal.style.display = 'flex';
-            
-            // Init canvas after visible
-            setTimeout(initCanvas, 100);
-        }
-
-        function closeCanvas() {
-            document.getElementById('canvasModal').style.display = 'none';
-        }
-
-        function initCanvas() {
-            const container = document.getElementById('canvasContainer');
-            canvas = document.getElementById('drawingCanvas');
-            ctx = canvas.getContext('2d');
-
-            // Resize canvas to match display size
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-
-            // Style
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#000';
-
-            // Events
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseout', stopDrawing);
-            
-            // Touch support
-            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-            canvas.addEventListener('touchend', stopDrawing);
-            
-            clearCanvas();
-        }
-
-        function getPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
-            };
-        }
-
-        function startDrawing(e) {
-            isDrawing = true;
-            const pos = getPos(e);
-            lastX = pos.x;
-            lastY = pos.y;
-        }
-
-        function draw(e) {
-            if (!isDrawing) return;
-            const pos = getPos(e);
-            
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(pos.x, pos.y);
-            ctx.stroke();
-            
-            lastX = pos.x;
-            lastY = pos.y;
-        }
-
-        function stopDrawing() {
-            isDrawing = false;
-        }
-
-        function handleTouchStart(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousedown', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            canvas.dispatchEvent(mouseEvent);
-        }
-
-        function handleTouchMove(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousemove', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            canvas.dispatchEvent(mouseEvent);
-        }
-
-        function clearCanvas() {
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        function sendCanvas() {
-            const btn = document.getElementById('btnSendCanvas');
-            btn.innerText = '发送中...';
-            btn.disabled = true;
-
-            // Get Base64
-            const dataUrl = canvas.toDataURL('image/png');
-            
-            // Upload
-            fetch('/upload', {
+        /* ===== 服务端通信 ===== */
+        async function copyViaServer(content, type = 'text', meta = {}) {
+            const res = await fetch('/copy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: 'image',
-                    content: dataUrl, // Standard format
-                    meta: { filename: `drawing_${Date.now()}.png`, source: 'web_canvas' }
-                })
-            })
-            .then(r => r.json())
-            .then(d => {
-                if(d.status === 'success') {
-                    alert('✅ 发送成功！');
-                    closeCanvas();
-                    loadHistory();
-                } else {
-                    alert('发送失败: ' + d.message);
+                body: JSON.stringify({ type, content, meta })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data || data.status !== 'success') {
+                throw new Error((data && data.message) || 'Copy failed');
+            }
+            return true;
+        }
+
+        async function copyIP() {
+            try {
+                await copyViaServer(serverAddress, 'text', { source: 'dashboard_ip' });
+                showToast('Address copied');
+            } catch (err) {
+                showToast(err.message || 'Copy failed', 'error');
+            }
+        }
+
+        async function copyQRUrl() {
+            const value = document.getElementById('qrUrl').textContent.trim();
+            if (!value || !value.startsWith('http')) return;
+            try {
+                await copyViaServer(value, 'text', { source: 'dashboard_qr_url' });
+                showToast('URL copied');
+            } catch (err) {
+                showToast(err.message || 'Copy failed', 'error');
+            }
+        }
+
+        function setAliveState(isAlive) {
+            document.getElementById('aliveDot').classList.toggle('off', !isAlive);
+        }
+
+        /* ===== 记录卡片 ===== */
+        // 中文注释：渲染精致空状态
+        function renderEmpty(msg) {
+            const dropIcon = '<svg viewBox="0 0 24 24"><path d="M12 2 4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>';
+            const isDefault = msg.includes('Drop') || msg.includes('Loading');
+            document.getElementById('gridContainer').innerHTML = `<div class="empty">
+                <div class="empty-icon">${dropIcon}</div>
+                <div class="empty-title">${isDefault ? 'Ready to receive' : escapeHtml(msg)}</div>
+                <div class="empty-sub">${isDefault ? 'Send something from your iPad to see it here.' : ''}</div>
+            </div>`;
+        }
+
+        async function deleteRecord(id) {
+            const res = await fetch(`/history/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data || data.status !== 'ok') {
+                throw new Error((data && data.message) || 'Delete failed');
+            }
+            return true;
+        }
+
+        // 中文注释：构建单个记录卡片
+        function buildCard(item) {
+            const card = document.createElement('article');
+            card.className = 'card';
+            if (item.type === 'image') card.classList.add('is-image');
+
+            // 时间
+            const time = item.timestamp
+                ? new Date(item.timestamp).toLocaleString('en-GB', { hour12: false, month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : '';
+
+            // 内容
+            const fileMeta = item.type === 'file'
+                ? escapeHtml((item.meta && item.meta.filename) || item.content || '')
+                : '';
+            const body = item.type === 'url'
+                ? `<span class="card-body-url">${escapeHtml(item.content || item.preview || '')}</span>`
+                : escapeHtml(item.preview || item.content || '');
+            const img = safeImageSrc(item.content);
+
+            // 删除按钮 SVG
+            const delSvg = '<svg viewBox="0 0 24 24"><path d="M7 6h10l-1 14H8L7 6Zm3-3h4l1 2h4v2H5V5h4l1-2Z"/></svg>';
+            // 预览按钮 SVG（图片卡片专用）
+            const previewSvg = '<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5ZM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5Zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3Z"/></svg>';
+
+            if (item.type === 'image') {
+                card.innerHTML = `
+                    ${img ? `<img class="card-img" src="${img}" alt="image">` : ''}
+                    <div class="card-time">${escapeHtml(time)}</div>
+                    <div class="card-footer">
+                        <button class="preview-btn" data-action="preview" title="Preview">${previewSvg}</button>
+                        <button class="del-btn" data-action="delete" title="Delete">${delSvg}</button>
+                    </div>
+                `;
+            } else {
+                card.innerHTML = `
+                    <div class="card-time">${escapeHtml(time)}</div>
+                    <div class="card-body">${body}</div>
+                    ${fileMeta ? `<div class="card-meta">${fileMeta}</div>` : ''}
+                    <div class="card-footer">
+                        <button class="del-btn" data-action="delete" title="Delete">${delSvg}</button>
+                    </div>
+                `;
+            }
+
+            // 中文注释：点击卡片 → 复制；点击删除按钮 → 删除
+            card.addEventListener('click', async (e) => {
+                const delBtn = e.target.closest('.del-btn');
+                if (delBtn) {
+                    e.stopPropagation();
+                    try {
+                        await deleteRecord(item.id);
+                        allRecords = allRecords.filter((r) => String(r.id) !== String(item.id));
+                        renderFilteredHistory();
+                        showToast('Deleted');
+                    } catch (err) {
+                        showToast(err.message || 'Delete failed', 'error');
+                    }
+                    return;
                 }
-            })
-            .catch(e => {
-                alert('网络错误');
-                console.error(e);
-            })
-            .finally(() => {
-                btn.innerText = '📤 发送到电脑';
-                btn.disabled = false;
+
+                // 点击预览按钮 → 打开图片弹窗
+                const previewBtn = e.target.closest('.preview-btn');
+                if (previewBtn) {
+                    e.stopPropagation();
+                    if (item.type === 'image') {
+                        const src = safeImageSrc(item.content);
+                        if (src) {
+                            document.getElementById('imagePreviewTag').src = src;
+                            document.getElementById('imageModal').classList.add('open');
+                        }
+                    }
+                    return;
+                }
+
+                // URL 类型 → 打开链接
+                if (item.type === 'url') {
+                    const target = String(item.content || '').trim();
+                    if (/^https?:\/\//i.test(target)) {
+                        window.open(target, '_blank', 'noopener,noreferrer');
+                    }
+                    return;
+                }
+
+                // 其他类型 → 复制
+                try {
+                    await copyViaServer(item.content, item.type, { ...(item.meta || {}), source: 'dashboard_record' });
+                    showToast('Copied');
+                } catch (err) {
+                    showToast(err.message || 'Copy failed', 'error');
+                }
+            });
+
+            return card;
+        }
+
+        function updateCount(total, current) {
+            const text = activeFilter === 'all'
+                ? `${total} items`
+                : `${current} ${activeFilter}`;
+            document.getElementById('recordsCount').textContent = text;
+        }
+
+        function renderFilteredHistory() {
+            const grid = document.getElementById('gridContainer');
+            const list = activeFilter === 'all'
+                ? allRecords
+                : allRecords.filter((r) => r.type === activeFilter);
+
+            updateCount(allRecords.length, list.length);
+            grid.innerHTML = '';
+
+            if (list.length === 0) {
+                renderEmpty(activeFilter === 'all' ? 'Drop something from your iPad.' : `No ${activeFilter} records.`);
+                return;
+            }
+
+            list.slice(0, 30).forEach((item) => grid.appendChild(buildCard(item)));
+        }
+
+        function bindFilters() {
+            document.querySelector('.inbox-filters').addEventListener('click', (e) => {
+                const btn = e.target.closest('.chip');
+                if (!btn) return;
+                activeFilter = btn.dataset.filter;
+                document.querySelectorAll('.chip').forEach((c) => c.classList.toggle('active', c === btn));
+                renderFilteredHistory();
             });
         }
-        
-        loadHistory();
+
+        /* ===== 接口调用 ===== */
+        async function refreshStatus() {
+            try {
+                const res = await fetch('/status');
+                const data = await res.json();
+                if (!res.ok || data.status !== 'ok') throw new Error();
+
+                setAliveState(true);
+                const address = data.ip ? `http://${data.ip}:${data.port || 3001}` : serverAddress;
+                applyAddress(address);
+
+                const pathNode = document.getElementById('savePathDisplay');
+                pathNode.textContent = formatPathDisplay(data.dataDir || '');
+                pathNode.title = data.dataDir || '';
+            } catch {
+                setAliveState(false);
+                document.getElementById('savePathDisplay').textContent = 'Unavailable';
+            }
+        }
+
+        async function loadHistory() {
+            renderEmpty('Loading…');
+            try {
+                const res = await fetch('/history');
+                const data = await res.json();
+                if (!res.ok || !Array.isArray(data.records)) throw new Error();
+                allRecords = data.records;
+                renderFilteredHistory();
+            } catch {
+                renderEmpty('Failed to load records.');
+                showToast('History load failed', 'error');
+            }
+        }
+
+        async function loadQRCode() {
+            const res = await fetch('/qrcode');
+            const data = await res.json();
+            if (!res.ok || data.status !== 'success') throw new Error(data.message || 'QR load failed');
+            cachedQr = data;
+            applyAddress(data.url || serverAddress);
+            return data;
+        }
+
+        // 中文注释：把 QR 渲染到 hover 气泡和弹窗中
+        function renderQRBubble(data) {
+            const bubble = document.getElementById('qrBubbleContent');
+            if (data && data.qrData) {
+                bubble.innerHTML = `<img src="${data.qrData}" alt="QR Code">`;
+            } else {
+                bubble.textContent = 'QR unavailable';
+            }
+        }
+
+        async function showQRCode() {
+            const modal = document.getElementById('qrModal');
+            const qrContent = document.getElementById('qrContent');
+            const qrUrl = document.getElementById('qrUrl');
+            modal.classList.add('open');
+            qrContent.textContent = 'Generating QR…';
+            qrUrl.textContent = '—';
+
+            try {
+                const data = cachedQr || await loadQRCode();
+                qrContent.innerHTML = `<img src="${data.qrData}" alt="QR Code">`;
+                qrUrl.textContent = data.url;
+            } catch (err) {
+                qrContent.textContent = 'QR generation failed.';
+                qrUrl.textContent = '—';
+                showToast(err.message || 'QR load failed', 'error');
+            }
+        }
+
+        function updateAutoStartMenu(enabled) {
+            document.getElementById('menuAutoState').textContent = enabled ? 'On' : 'Off';
+        }
+
+        async function initAutoStart() {
+            try {
+                const res = await fetch('/autostart');
+                const data = await res.json();
+                updateAutoStartMenu(Boolean(data.enabled));
+            } catch {
+                updateAutoStartMenu(false);
+            }
+        }
+
+        async function toggleAutostart() {
+            const current = document.getElementById('menuAutoState').textContent === 'On';
+            const btn = document.getElementById('menuAutoStart');
+            await withLoading(btn, async () => {
+                const res = await fetch('/autostart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: !current })
+                });
+                const data = await res.json();
+                if (!res.ok || data.status !== 'success') throw new Error(data.message || 'Failed');
+                updateAutoStartMenu(Boolean(data.enabled));
+                showToast(data.enabled ? 'Auto start on' : 'Auto start off');
+            }).catch((err) => showToast(err.message || 'Failed', 'error'));
+        }
+
+        async function openDir() {
+            const btn = document.getElementById('menuOpenDir');
+            await withLoading(btn, async () => {
+                const res = await fetch('/open-dir', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok || data.status !== 'success') throw new Error(data.message || 'Failed');
+                showToast('Folder opened');
+            }).catch((err) => showToast(err.message || 'Failed', 'error'));
+        }
+
+        async function selectFolder() {
+            const btn = document.getElementById('menuSelectPath');
+            await withLoading(btn, async () => {
+                const res = await fetch('/select-folder', { method: 'POST' });
+                const pick = await res.json();
+                if (!res.ok || pick.status === 'error') throw new Error(pick.message || 'Failed');
+                if (pick.status === 'cancel') {
+                    showToast('Canceled');
+                    return;
+                }
+
+                const saveRes = await fetch('/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dataDir: pick.path })
+                });
+                const saveData = await saveRes.json();
+                if (!saveRes.ok || saveData.status !== 'success') throw new Error(saveData.message || 'Failed');
+
+                const pathNode = document.getElementById('savePathDisplay');
+                pathNode.textContent = formatPathDisplay(pick.path);
+                pathNode.title = pick.path;
+                showToast('Save path updated');
+            }).catch((err) => showToast(err.message || 'Failed', 'error'));
+        }
+
+        /* ===== 事件绑定 ===== */
+        function bindSettingsMenu() {
+            const btn = document.getElementById('btnSettings');
+            const menu = document.getElementById('settingsMenu');
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.classList.toggle('open');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!menu.classList.contains('open')) return;
+                if (menu.contains(e.target) || btn.contains(e.target)) return;
+                menu.classList.remove('open');
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    menu.classList.remove('open');
+                    hideModal('qrModal');
+                    hideModal('imageModal');
+                }
+            });
+        }
+
+        /* ===== 启动 ===== */
+        async function boot() {
+            initTheme();
+
+            document.getElementById('btnTheme').addEventListener('click', toggleTheme);
+            bindSettingsMenu();
+            bindFilters();
+
+            try {
+                const qrData = await loadQRCode();
+                renderQRBubble(qrData);
+            } catch {
+                renderQRBubble(null);
+            }
+
+            await Promise.all([initAutoStart(), refreshStatus()]);
+            await loadHistory();
+        }
+
+        boot();
     </script>
 </body>
 
